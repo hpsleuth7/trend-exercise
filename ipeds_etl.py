@@ -159,6 +159,17 @@ class ipedsETLObject(object):
         # rename student_charges_df using student_charges_cols
         self.student_charges_df.rename(columns=student_charges_cols, inplace=True)
         self.student_charges_df = self.student_charges_df[student_charges_cols.values()]
+
+        # Map values
+        # set admissions_df['consider_work_experience'] to mapping:
+            # 1.0 -> 'Required for admission'
+            # 3.0 -> 'Not considered for admission'
+            # 5.0 -> 'Considered for admission'
+        self.admissions_df['consider_work_exp'] = self.admissions_df['consider_work_exp'].map({
+            1.0: 'Required for admission',
+            3.0: 'Not considered for admission',
+            5.0: 'Considered for admission'
+        })
     
     def load_data(self) -> None:
         """
