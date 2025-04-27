@@ -1,0 +1,8 @@
+{
+    "UNITID": "unit_id",
+    "INSTNM": "institution_name",
+    "CITY": "city",
+    "STABBR": "state",
+    "ZIP": "zip",
+    "OBEREG": "region"
+}

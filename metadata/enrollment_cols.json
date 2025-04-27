@@ -1,0 +1,6 @@
+{
+    "UNITID": "unit_id",
+    "EFCSTATE": "state_of_residence",
+    "EFRES01": "num_first_time_freshmen",
+    "EFRES02 ": "num_first_time_freshmen_recent_grad"
+}

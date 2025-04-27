@@ -1,0 +1,8 @@
+{
+    "UNITID": "unit_id",
+    "ADMCON7": "consider_test_scores",
+    "ADMCON10": "consider_work_exp",
+    "APPLCN": "num_applicants",
+    "ADMSSN": "num_admissions",
+    "ENRLT": "num_enrolled"
+}

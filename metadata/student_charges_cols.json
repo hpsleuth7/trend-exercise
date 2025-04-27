@@ -1,0 +1,6 @@
+{
+    "UNITID": "unit_id",
+    "TUITION1": "in_district_tuition",
+    "TUITION2": "in_state_tuition",
+    "TUITION3": "out_of_state_tuition"
+}

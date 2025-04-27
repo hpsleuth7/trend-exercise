@@ -7,8 +7,11 @@ import zipfile
 import io
 import logging
 import sqlalchemy
+import sys
 
 from datetime import datetime
+from importlib import resources
+import json
 import typing
 
 class ipedsETLObject(object):
@@ -29,6 +32,12 @@ class ipedsETLObject(object):
     
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
+        # Create a file handler
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        self.logger.addHandler(handler)
+        # Test the logger
+        self.logger.info("Logger initialized.")
     
     def download_data(self) -> None:
         """
@@ -40,6 +49,18 @@ class ipedsETLObject(object):
         if not os.path.exists(self.data_dir):
             os.makedirs(self.data_dir)
         
+        # Download the institution records to the data directory
+        student_charges_url = f"{self.base_url}/HD2023.zip"
+        response = requests.get(student_charges_url)
+        if response.status_code == 200:
+            with open(os.path.join(self.data_dir, 'institution.zip'), 'wb') as f:
+                f.write(response.content)
+            self.logger.info("Institution records downloaded successfully.")
+        else:
+            self.logger.error(f"Failed to download institution records. Status code: {response.status_code}")
+        
+
+
         # Download the student charges table to the data directory
         student_charges_url = f"{self.base_url}/IC2023_AY.zip"
         response = requests.get(student_charges_url)
@@ -94,11 +115,50 @@ class ipedsETLObject(object):
                 self.logger.info(f"Extracted {file} to {self.data_dir}")
         
         # Load the data into pandas DataFrames
+        self.institution_df = pd.read_csv(os.path.join(self.data_dir, 'HD2023.csv'),
+                                          encoding='latin1')
         self.student_charges_df = pd.read_csv(os.path.join(self.data_dir, 'IC2023_AY.csv'))
         self.admissions_df = pd.read_csv(os.path.join(self.data_dir, 'ADM2023.csv'))
         self.completions_df = pd.read_csv(os.path.join(self.data_dir, 'C2023_B.csv'))
         self.enrollment_df = pd.read_csv(os.path.join(self.data_dir, 'EF2023C.csv'))
         self.logger.info("Data loaded successfully.")
+    
+    def transform_data(self) -> None:
+        """
+        Transform the data as needed.
+        """
+        # read in metadata/admissions_cols.json
+        with open('metadata/admissions_cols.json', 'r') as f:
+            admissions_cols = json.load(f)
+        # rename admissions_df using admissions_cols
+        self.admissions_df.rename(columns=admissions_cols, inplace=True)
+        self.admissions_df = self.admissions_df[admissions_cols.values()]
+
+        with open('metadata/completions_cols.json', 'r') as f:
+            completions_cols = json.load(f)
+        # rename completions_df using completions_cols
+        self.completions_df.rename(columns=completions_cols, inplace=True)
+        self.completions_df = self.completions_df[completions_cols.values()]
+
+        with open('metadata/enrollment_cols.json', 'r') as f:
+            enrollment_cols = json.load(f)
+        # rename enrollment_df using enrollment_cols
+        import pdb
+        pdb.set_trace()
+        self.enrollment_df.rename(columns=enrollment_cols, inplace=True)
+        self.enrollment_df = self.enrollment_df[enrollment_cols.values()]
+
+        with open('metadata/institution_cols.json', 'r') as f:
+            institution_cols = json.load(f)
+        # rename institution_df using institution_cols
+        self.institution_df.rename(columns=institution_cols, inplace=True)
+        self.institution_df = self.institution_df[institution_cols.values()]
+
+        with open('metadata/student_charges_cols.json', 'r') as f:
+            student_charges_cols = json.load(f)
+        # rename student_charges_df using student_charges_cols
+        self.student_charges_df.rename(columns=student_charges_cols, inplace=True)
+        self.student_charges_df = self.student_charges_df[student_charges_cols.values()]
     
     def load_data(self) -> None:
         """
@@ -110,9 +170,11 @@ class ipedsETLObject(object):
         engine = sqlalchemy.create_engine('sqlite:///ipeds_data.db')
         
         # Load the data into the database
+        self.institution_df.to_sql('institution', engine, if_exists='replace', index=False)
         self.student_charges_df.to_sql('student_charges', engine, if_exists='replace', index=False)
         self.admissions_df.to_sql('admissions', engine, if_exists='replace', index=False)
         self.completions_df.to_sql('completions', engine, if_exists='replace', index=False)
         self.enrollment_df.to_sql('enrollment', engine, if_exists='replace', index=False)
+        
         
         self.logger.info("Data loaded into database successfully.")
