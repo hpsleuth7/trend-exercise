@@ -8,7 +8,7 @@ def main():
 
     # Download the data
     print("Downloading data...")
-    # ipeds_etl.download_data()
+    ipeds_etl.download_data()
 
     # Transform the data
     ipeds_etl.read_data()
